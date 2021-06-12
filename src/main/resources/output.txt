@@ -1,7 +1,1 @@
-A
-
-(->,A,A)
-
-(->,A,(->,A,A))
-A
-(->,A,A)
+Proof is incorrect at line 2

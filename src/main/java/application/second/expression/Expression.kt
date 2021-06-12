@@ -1,7 +1,6 @@
 package application.second.expression
 
 import com.github.h0tk3y.betterParse.combinators.leftAssociative
-import com.github.h0tk3y.betterParse.combinators.map
 import com.github.h0tk3y.betterParse.combinators.or
 import com.github.h0tk3y.betterParse.combinators.rightAssociative
 import com.github.h0tk3y.betterParse.combinators.times
