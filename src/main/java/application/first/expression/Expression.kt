@@ -1,4 +1,4 @@
-package application.expression
+package application.first.expression
 
 import com.github.h0tk3y.betterParse.combinators.leftAssociative
 import com.github.h0tk3y.betterParse.combinators.map
@@ -9,7 +9,6 @@ import com.github.h0tk3y.betterParse.combinators.unaryMinus
 import com.github.h0tk3y.betterParse.combinators.use
 import com.github.h0tk3y.betterParse.grammar.Grammar
 import com.github.h0tk3y.betterParse.grammar.parser
-import com.github.h0tk3y.betterParse.lexer.literalToken
 import com.github.h0tk3y.betterParse.lexer.regexToken
 import com.github.h0tk3y.betterParse.parser.Parser
 

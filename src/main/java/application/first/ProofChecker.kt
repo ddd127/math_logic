@@ -1,6 +1,6 @@
 package application.first
 
-import application.expression.grammar
+import application.first.expression.grammar
 import application.io.IO
 import com.github.h0tk3y.betterParse.grammar.parseToEnd
 
