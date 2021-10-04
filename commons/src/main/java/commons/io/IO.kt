@@ -1,36 +1,48 @@
-package application.io
+package commons.io
 
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.Closeable
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.io.InputStreamReader
+import java.io.OutputStream
 import java.io.OutputStreamWriter
 
 @Suppress("unused")
 class IO(
-    inFile: String? = null,
-    outFile: String? = null
+    inStream: InputStream,
+    outStream: OutputStream,
 ) : Closeable {
 
-    constructor(args: Array<String>) : this(args.getOrNull(0), args.getOrNull(1))
+    constructor(inFile: String, outFile: String) :
+        this(
+            FileInputStream(inFile),
+            FileOutputStream(outFile),
+        )
+
+    constructor(args: Array<String>) :
+        this(
+            args.getOrNull(0).let { inFile ->
+                if (inFile != null)
+                    FileInputStream(inFile)
+                else
+                    System.`in`
+            },
+            args.getOrNull(1).let { outFile ->
+                if (outFile != null)
+                    FileOutputStream(outFile)
+                else
+                    System.out
+            },
+        )
 
     private val `in` = BufferedReader(
-        InputStreamReader(
-            if (inFile != null)
-                FileInputStream(inFile)
-            else
-                System.`in`
-        )
+        InputStreamReader(inStream)
     )
     private val out = BufferedWriter(
-        OutputStreamWriter(
-            if (outFile != null)
-                FileOutputStream(outFile)
-            else
-                System.out
-        )
+        OutputStreamWriter(outStream)
     )
 
     fun readLn(): String = `in`.readLine()

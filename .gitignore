@@ -1,4 +1,7 @@
 .idea
 target
+out
 
 *.iml
+.DS_Store
+kotlin-tmp
