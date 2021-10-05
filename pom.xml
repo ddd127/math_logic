@@ -12,6 +12,7 @@
         <module>commons</module>
         <module>taskA</module>
         <module>taskB</module>
+        <module>taskC</module>
     </modules>
 
     <dependencies>
