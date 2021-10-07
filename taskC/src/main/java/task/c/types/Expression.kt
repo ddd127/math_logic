@@ -52,7 +52,7 @@ sealed interface QuantifierExpression : Expression {
         return if (variable == target || !expression.isFreeForReplace(target, replacement)) {
             false
         } else {
-            replacement.extractVariables().contains(variable)
+            !replacement.extractVariables().contains(variable)
         }
     }
 }
@@ -229,7 +229,7 @@ data class ForAny(
         return if (target !is ForAny) {
             null
         } else {
-            val leftSet = variable.extractTerms(target.variable, variable)
+            val leftSet = this.variable.extractTerms(target.variable, variable)
             val rightSet = expression.extractTerms(target.expression, variable) ?: return null
             leftSet + rightSet
         }
@@ -256,7 +256,7 @@ data class Exists(
         return if (target !is Exists) {
             null
         } else {
-            val leftSet = variable.extractTerms(target.variable, variable)
+            val leftSet = this.variable.extractTerms(target.variable, variable)
             val rightSet = expression.extractTerms(target.expression, variable) ?: return null
             leftSet + rightSet
         }

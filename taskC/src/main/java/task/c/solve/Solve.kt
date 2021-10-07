@@ -1,6 +1,7 @@
-package task.c
+package task.c.solve
 
 import commons.io.IO
+
 import task.c.dto.*
 import task.c.types.*
 

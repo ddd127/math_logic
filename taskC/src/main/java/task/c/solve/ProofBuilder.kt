@@ -1,4 +1,4 @@
-package task.c
+package task.c.solve
 
 import task.c.dto.*
 import task.c.solve.ways.*
