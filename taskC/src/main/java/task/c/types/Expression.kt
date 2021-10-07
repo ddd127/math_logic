@@ -110,7 +110,7 @@ data class Eq(
 data class Not(
     val arg: Expression,
 ) : Expression {
-    override val infixString: String = "(${arg.infixString})"
+    override val infixString: String = "(!${arg.infixString})"
 
     override fun isFree(variable: Var): Boolean {
         return arg.isFree(variable)
@@ -213,7 +213,7 @@ data class ForAny(
     override val variable: Var,
     override val expression: Expression,
 ) : QuantifierExpression {
-    override val infixString: String = "@${variable.infixString}.${expression.infixString}"
+    override val infixString: String = "(@${variable.infixString}.${expression.infixString})"
 
     override fun replaceFree(oldVar: Var, replacement: Term): ForAny {
         if (variable == oldVar) {
@@ -240,7 +240,7 @@ data class Exists(
     override val variable: Var,
     override val expression: Expression,
 ) : QuantifierExpression {
-    override val infixString: String = "?${variable.infixString}.${expression.infixString}"
+    override val infixString: String = "(?${variable.infixString}.${expression.infixString})"
 
     override fun replaceFree(oldVar: Var, replacement: Term): Exists {
         if (variable == oldVar) {

@@ -1,7 +1,6 @@
 package task.c.solve.ways
 
-import task.c.CheckResult
-import task.c.Reason
+import task.c.dto.*
 import task.c.types.*
 
 object QuantifierAxiomChecker {

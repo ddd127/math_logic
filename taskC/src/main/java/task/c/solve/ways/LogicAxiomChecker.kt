@@ -1,6 +1,6 @@
 package task.c.solve.ways
 
-import task.c.*
+import task.c.dto.*
 import task.c.types.*
 
 object LogicAxiomChecker {

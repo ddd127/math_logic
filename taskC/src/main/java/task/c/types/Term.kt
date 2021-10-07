@@ -55,7 +55,7 @@ data class Var(
 data class Inc(
     val arg: Term,
 ) : Term {
-    override val infixString: String = "(${arg.infixString})"
+    override val infixString: String = "${arg.infixString}'"
 
     override fun replaceFree(oldVar: Var, replacement: Term): Inc {
         return Inc(arg.replaceFree(oldVar, replacement))

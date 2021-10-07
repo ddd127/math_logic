@@ -18,7 +18,7 @@ class SolveTest {
         "test1_out.txt",
     )
 
-    // @Test
+    @Test
     fun test2() = test(
         "test2_in.txt",
         "test2_out.txt",
