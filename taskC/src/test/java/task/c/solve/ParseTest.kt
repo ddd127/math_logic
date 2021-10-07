@@ -1,22 +1,10 @@
 package task.c.solve
 
-import task.c.types.Eq
-import task.c.types.Expression
-import task.c.types.ForAny
-import task.c.types.Imp
-import task.c.types.Var
-import task.c.types.Zero
+import task.c.types.*
 
 import org.junit.Test
 
 import org.junit.Assert.*
-import task.c.types.Add
-import task.c.types.And
-import task.c.types.Exists
-import task.c.types.Inc
-import task.c.types.Not
-import task.c.types.Or
-import task.c.types.Predicate
 
 class ParseTest {
 
