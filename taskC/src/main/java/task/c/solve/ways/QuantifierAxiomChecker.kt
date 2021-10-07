@@ -44,7 +44,7 @@ object QuantifierAxiomChecker {
             Reason.LogicAxiom(axNumber)
         } else {
             CheckResult.FreeCheckFailed(
-                "variable $variable is not free for term $theta in $axSymbol-axiom"
+                "variable ${variable.name} is not free for term ${theta.infixString} in $axSymbol-axiom"
             )
         }
     }

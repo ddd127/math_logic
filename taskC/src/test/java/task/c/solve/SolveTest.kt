@@ -59,12 +59,6 @@ class SolveTest {
         "test8_out.txt",
     )
 
-    @Test
-    fun test9() = test(
-        "test9_in.txt",
-        "test9_out.txt",
-    )
-
     private fun test(
         inputFile: String,
         expectedFile: String,
@@ -81,12 +75,14 @@ class SolveTest {
             }
         }.trimEnd().split("\n")
 
-        // assertEquals(
-        //     expectedLines.joinToString("\n"),
-        //     actualLines.joinToString("\n"),
-        // )
 
-        assertEquals(expectedLines.size, actualLines.size)
+        if (expectedLines.size != actualLines.size) {
+            assertEquals(
+                expectedLines.joinToString("\n"),
+                actualLines.joinToString("\n"),
+            )
+        }
+
         for (index in expectedLines.indices) {
             val expected = expectedLines[index]
             val actual = actualLines[index]
@@ -94,17 +90,15 @@ class SolveTest {
                 assertEquals(expected, actual)
                 continue
             }
-            val (expectedAnnotation, expectedExpression) = split(expected)
-            val (actualAnnotation, actualExpression) = split(actual)
-            assertEquals(expectedExpression, actualExpression)
-            val (expectedNoIndex, expectedIndex) = removeFirstMPIndex(expectedAnnotation)
-            val (actualNoIndex, actualIndex) = removeFirstMPIndex(actualAnnotation)
-            assertEquals(expectedNoIndex, actualNoIndex)
-            assertTrue(actualIndex <= expectedIndex)
-            assertEquals(
-                split(expectedLines[expectedIndex]).second,
-                split(actualLines[actualIndex]).second,
-            )
+            try {
+                val (expectedAnnotation, expectedExpression) = split(expected)
+                val (actualAnnotation, actualExpression) = split(actual)
+
+                assertEquals(expectedExpression, actualExpression)
+                checkAnnotation(expectedAnnotation, actualAnnotation, expectedLines, actualLines)
+            } catch (e: Exception) {
+                throw Exception("Exception at index = $index", e)
+            }
         }
     }
 
@@ -114,14 +108,42 @@ class SolveTest {
             string.substring(endOfAnnotation + 1)
     }
 
-    private fun removeFirstMPIndex(annotation: String): Pair<String, Int> {
-        assertTrue(annotation.matches("\\[\\d*\\]. ".toRegex()))
-        val mpIndex = annotation.indexOf('M')
-        val prefix = annotation.substring(0, mpIndex + "M.P. ".length)
-        val postfix = annotation.substring(mpIndex + "M.P. ".length)
-        val commaIndex = postfix.indexOf(',')
-        val index = postfix.substring(0, commaIndex).toInt()
-        return prefix + postfix.substring(commaIndex) to index
+    private fun checkAnnotation(
+        expected: String,
+        actual: String,
+        expectedLines: List<String>,
+        actualLines: List<String>,
+    ) {
+        val (expectedWithoutIndex, expectedIndex) = extractFirstIndex(expected)
+        val (actualWithoutIndex, actualIndex) = extractFirstIndex(actual)
+
+        assertTrue(actualIndex <= expectedIndex)
+        assertEquals(expectedWithoutIndex, actualWithoutIndex)
+        assertEquals(
+            split(expectedLines[expectedIndex]).second,
+            split(actualLines[actualIndex]).second,
+        )
+    }
+
+    private fun extractFirstIndex(annotation: String): Pair<String, Int> {
+        var count = 0
+        val indexBegin = annotation.indexOfFirst { char ->
+            if (char == ' ') {
+                ++count
+                count == 2
+            } else {
+                false
+            }
+        } + 1
+        val indexEnd = annotation.indexOfFirst { char ->
+            when (char) {
+                ']' -> true
+                ',' -> true
+                else -> false
+            }
+        }
+        val index = annotation.substring(indexBegin, indexEnd).toInt()
+        return annotation.substring(0, indexBegin) + annotation.substring(indexEnd) to index
     }
 
     private fun loadFile(fileName: String): List<String> {
