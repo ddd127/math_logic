@@ -20,25 +20,26 @@ class Solve(
         val statement = firstLine.drop(2).let(Expression::parseExpression)
         val proofProto = allLines.drop(1).map(Expression::parseExpression)
 
-        val proof = try {
-            Proof.buildProof(statement, proofProto)
-        } catch (e: IllegalArgumentException) {
-            e.message?.let(io::write)
-            return
-        }
+        val proof = buildProof(statement, proofProto)
 
         io.writeln("|-${proof.statement.infixString}")
-        proof.proof.forEachIndexed { index, pair ->
-            val (expression, reason) = pair
-            val annotation = when (reason) {
-                is LogicAxiom -> "$index. Ax. sch. ${reason.schemeNumber}"
-                is Induction -> "$index. Ax. sch. A9"
-                is ArithmeticAxiom -> "$index. Ax. A${reason.schemeNumber}"
-                is MP -> "$index. M.P. ${reason.left}, ${reason.imp}"
-                is ForAnyRule -> "$index. @-intro ${reason.number}"
-                is ExistsRule -> "$index. ?-intro ${reason.number}"
+        proof.proof.forEachIndexed { indexProto, item ->
+            val index = indexProto + 1
+            when (item) {
+                is ProofItem.WrongLine -> io.write(item.message)
+                is ProofItem.NormalItem -> {
+                    val (reason, expression) = item
+                    val annotation = when (reason) {
+                        is LogicAxiom -> "$index. Ax. sch. ${reason.schemeNumber}"
+                        is Induction -> "$index. Ax. sch. A9"
+                        is ArithmeticAxiom -> "$index. Ax. A${reason.schemeNumber}"
+                        is MP -> "$index. M.P. ${reason.left}, ${reason.imp}"
+                        is ForAnyRule -> "$index. @-intro ${reason.number}"
+                        is ExistsRule -> "$index. ?-intro ${reason.number}"
+                    }
+                    io.writeln("[$annotation] ${expression.infixString}")
+                }
             }
-            io.writeln("[$annotation] ${expression.infixString}")
         }
     }
 }

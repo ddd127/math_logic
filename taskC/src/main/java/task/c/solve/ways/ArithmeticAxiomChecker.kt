@@ -19,7 +19,7 @@ object ArithmeticAxiomChecker {
     }
 
     fun check(expression: Expression): CheckResult {
-        return schemes.withIndex().firstOrNull { scheme ->
+        return schemes.withIndex().firstOrNull { (_, scheme) ->
             scheme == expression
         }?.index?.let { Reason.ArithmeticAxiom(it + 1) } ?: CheckResult.SchemeCheckFailed
     }

@@ -13,9 +13,58 @@ import java.io.ByteArrayOutputStream
 class SolveTest {
 
     @Test
-    fun test1() {
+    fun test1() = test(
+        "test1_in.txt",
+        "test1_out.txt",
+    )
 
-    }
+    // @Test
+    fun test2() = test(
+        "test2_in.txt",
+        "test2_out.txt",
+    )
+
+    @Test
+    fun test3() = test(
+        "test3_in.txt",
+        "test3_out.txt",
+    )
+
+    @Test
+    fun test4() = test(
+        "test4_in.txt",
+        "test4_out.txt",
+    )
+
+    @Test
+    fun test5() = test(
+        "test5_in.txt",
+        "test5_out.txt",
+    )
+
+    @Test
+    fun test6() = test(
+        "test6_in.txt",
+        "test6_out.txt",
+    )
+
+    // @Test
+    fun test7() = test(
+        "test7_in.txt",
+        "test7_out.txt",
+    )
+
+    @Test
+    fun test8() = test(
+        "test8_in.txt",
+        "test8_out.txt",
+    )
+
+    // @Test
+    fun test9() = test(
+        "test9_in.txt",
+        "test9_out.txt",
+    )
 
     private fun test(
         inputFile: String,
