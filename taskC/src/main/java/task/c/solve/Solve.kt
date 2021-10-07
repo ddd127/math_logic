@@ -27,7 +27,7 @@ class Solve(
         proof.proof.forEachIndexed { indexProto, item ->
             val index = indexProto + 1
             when (item) {
-                is ProofItem.WrongLine -> io.write(item.message)
+                is ProofItem.WrongLine -> io.writeln(item.message)
                 is ProofItem.NormalItem -> {
                     val (reason, expression) = item
                     val annotation = when (reason) {
