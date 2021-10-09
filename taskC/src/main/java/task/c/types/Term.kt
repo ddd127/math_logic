@@ -55,7 +55,7 @@ data class Var(
 data class Inc(
     val arg: Term,
 ) : Term {
-    override val infixString: String = "${arg.infixString}'"
+    override val infixString: String get() = "${arg.infixString}'"
 
     override fun replaceFree(oldVar: Var, replacement: Term): Inc {
         return Inc(arg.replaceFree(oldVar, replacement))
@@ -76,7 +76,7 @@ data class Add(
     override val left: Term,
     override val right: Term,
 ) : BinaryTerm {
-    override val infixString: String = "(${left.infixString}+${right.infixString})"
+    override val infixString: String get() = "(${left.infixString}+${right.infixString})"
 
     override fun replaceFree(oldVar: Var, replacement: Term): Add {
         return Add(
@@ -100,7 +100,7 @@ data class Mul(
     override val left: Term,
     override val right: Term,
 ) : BinaryTerm {
-    override val infixString: String = "(${left.infixString}*${right.infixString})"
+    override val infixString: String get() = "(${left.infixString}*${right.infixString})"
 
     override fun replaceFree(oldVar: Var, replacement: Term): Mul {
         return Mul(
