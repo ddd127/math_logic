@@ -12,7 +12,7 @@ object QuantifierAxiomChecker {
         val variable = expression.left.variable
         val phi = expression.left.expression
 
-        return checkThetaReplacement(variable, phi, expression.right, 11, '!')
+        return checkThetaReplacement(variable, phi, expression.right, 11, '@')
     }
 
     fun checkExists(expression: Expression): CheckResult {

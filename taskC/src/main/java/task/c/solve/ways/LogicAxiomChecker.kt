@@ -15,7 +15,7 @@ object LogicAxiomChecker {
         "B -> A | B",
         "(A -> C) -> (B -> C) -> (A | B -> C)",
         "(A -> B) -> (A -> !B) -> !A",
-        "A -> !A -> B",
+        "!!A -> A",
     ).map { scheme ->
         scheme.let(Expression::parseExpression)
             .let(this::replaceVars)
