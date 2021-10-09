@@ -2,20 +2,14 @@ package task.b.solve
 
 import commons.expression.Expression
 
-data class NaturalProof(
-    val hypothesis: List<Expression>,
-    val result: Expression,
-    val rule: Rule,
-    val level: Int,
-    val precondition: List<NaturalProof>,
-) {
-    constructor(
-        hypothesis: List<Expression>,
-        result: Expression,
-        rule: Rule,
-        level: Int,
-        vararg precondition: NaturalProof,
-    ) : this(hypothesis, result, rule, level, precondition.toList())
+sealed interface NaturalProof {
+
+    val hypothesis: List<Expression>
+    val result: Expression
+    val level: Int
+    val rule: String
+
+    fun getPreconditions(): List<NaturalProof>
 
     fun getAllItems(): List<NaturalProof> {
         val result = mutableListOf<NaturalProof>()
@@ -26,70 +20,130 @@ data class NaturalProof(
     private fun getRecur(
         result: MutableList<NaturalProof>,
     ) {
-        precondition.forEach { it.getRecur(result) }
+        getPreconditions().forEach { it.getRecur(result) }
         result.add(this)
     }
 
-    companion object {
+    data class Ax(
+        override val hypothesis: List<Expression>,
+        override val result: Expression,
+        override val level: Int,
+    ) : NaturalProof {
 
-        fun build(
-            classicalProof: ClassicalProof,
-            hypothesis: Set<Expression>,
-        ): NaturalProof {
-            return buildRecur(
-                classicalProof,
-                hypothesis.toList(),
-                0,
-            )
-        }
+        override fun getPreconditions(): List<NaturalProof> = emptyList()
 
-        private fun buildRecur(
-            classicalProof: ClassicalProof,
-            hypothesis: List<Expression>,
-            level: Int,
-        ): NaturalProof {
-            return when (classicalProof) {
-                is ClassicalProof.HypothesisItem -> {
-                    NaturalProof(
-                        hypothesis,
-                        classicalProof.expression,
-                        Rule.AX,
-                        level,
-                    )
-                }
-                is ClassicalProof.AxiomItem -> {
-                    classicalProof.axiom.naturalProof(
-                        classicalProof.expression,
-                        hypothesis,
-                        level,
-                    )
-                }
-                is ClassicalProof.MpItem -> {
-                    NaturalProof(
-                        hypothesis,
-                        classicalProof.expression,
-                        Rule.E_IMP,
-                        level,
-                        buildRecur(classicalProof.imp, hypothesis, level + 1),
-                        buildRecur(classicalProof.left, hypothesis, level + 1),
-                    )
-                }
-            }
-        }
+        override val rule: String = "Ax"
     }
-}
 
-enum class Rule(
-    val sign: String,
-) {
-    AX("Ax"),
-    E_IMP("E->"),
-    I_IMP("I->"),
-    I_AND("I&"),
-    E_L_AND("El&"),
-    E_R_AND("Er&"),
-    I_L_OR("Il|"),
-    I_R_OR("Ir|"),
-    E_OR("E|"),
-    E_BOTTOM("E_|_"),
+    data class EraseImp(
+        override val hypothesis: List<Expression>,
+        override val result: Expression,
+        override val level: Int,
+        val imp: NaturalProof,
+        val left: NaturalProof,
+    ) : NaturalProof {
+
+        override fun getPreconditions(): List<NaturalProof> = listOf(imp, left)
+
+        override val rule: String = "E->"
+    }
+
+    data class InsertImp(
+        override val hypothesis: List<Expression>,
+        override val result: Expression,
+        override val level: Int,
+        val precondition: NaturalProof,
+    ) : NaturalProof {
+
+        override fun getPreconditions(): List<NaturalProof> = listOf(precondition)
+
+        override val rule: String = "I->"
+    }
+
+    data class InsertAnd(
+        override val hypothesis: List<Expression>,
+        override val result: Expression,
+        override val level: Int,
+        val phi: NaturalProof,
+        val psi: NaturalProof,
+    ) : NaturalProof {
+
+        override fun getPreconditions(): List<NaturalProof> = listOf(phi, psi)
+
+        override val rule: String = "I&"
+    }
+
+    data class EraseLeftAnd(
+        override val hypothesis: List<Expression>,
+        override val result: Expression,
+        override val level: Int,
+        val precondition: NaturalProof,
+    ) : NaturalProof {
+
+        override fun getPreconditions(): List<NaturalProof> = listOf(precondition)
+
+        override val rule: String = "El&"
+    }
+
+    data class EraseRightAnd(
+        override val hypothesis: List<Expression>,
+        override val result: Expression,
+        override val level: Int,
+        val precondition: NaturalProof,
+    ) : NaturalProof {
+
+        override fun getPreconditions(): List<NaturalProof> = listOf(precondition)
+
+        override val rule: String = "Er&"
+    }
+
+    data class InsertLeftOr(
+        override val hypothesis: List<Expression>,
+        override val result: Expression,
+        override val level: Int,
+        val precondition: NaturalProof,
+    ) : NaturalProof {
+
+        override fun getPreconditions(): List<NaturalProof> = listOf(precondition)
+
+        override val rule: String = "Il|"
+    }
+
+    data class InsertRightOr(
+        override val hypothesis: List<Expression>,
+        override val result: Expression,
+        override val level: Int,
+        val precondition: NaturalProof,
+    ) : NaturalProof {
+
+        override fun getPreconditions(): List<NaturalProof> = listOf(precondition)
+
+        override val rule: String = "Ir|"
+    }
+
+    data class EraseOr(
+        override val hypothesis: List<Expression>,
+        override val result: Expression,
+        override val level: Int,
+        val phi: NaturalProof,
+        val psi: NaturalProof,
+        val or: NaturalProof,
+    ) : NaturalProof {
+
+        override fun getPreconditions(): List<NaturalProof> = listOf(phi, psi, or)
+
+        override val rule: String = "E|"
+    }
+
+    data class EraseBottom(
+        override val hypothesis: List<Expression>,
+        override val result: Expression,
+        override val level: Int,
+        val precondition: NaturalProof,
+    ) : NaturalProof {
+
+        override fun getPreconditions(): List<NaturalProof> = listOf(precondition)
+
+        override val rule: String = "E_|_"
+    }
 }

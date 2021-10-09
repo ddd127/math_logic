@@ -11,10 +11,10 @@ KOTLINC=kotlinc
 all: out compile
 
 run:
-	${KOTLIN} -cp out:${DEPS} -Djava.io.tmpdir=tmp task.c.solve.${MAINCLASS} $(IN) $(OUT)
+	${KOTLIN} -cp out:${DEPS} -Djava.io.tmpdir=tmp task.b.solve.${MAINCLASS} $(IN) $(OUT)
 
 pack:
-	zip taskC.zip -r Makefile lib commons taskA taskB taskC
+	zip taskB.zip -r Makefile lib commons taskA taskB taskC
 
 clean:
 	rm -rf out

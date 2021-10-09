@@ -24,13 +24,13 @@ class Solve(
                 statement,
                 proofList,
             )
-            val naturalProof = NaturalProof.build(classicalProof, hypothesisSet)
+            val naturalProof = build(classicalProof, hypothesisSet)
             val items = naturalProof.getAllItems()
             items.forEach { item ->
                 item.run {
-                    val hypoString = hypothesis.joinToString(",") { it.naturalString }
+                    val hypoString = hypothesis.joinToString(",") { it.naturalString() }
                     io.writeln(
-                        "[$level] $hypoString|-${result.naturalString} [${rule.sign}]"
+                        "[$level] $hypoString|-${result.naturalString()} [${item.rule}]"
                     )
                 }
             }

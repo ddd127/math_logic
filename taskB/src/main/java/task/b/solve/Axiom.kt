@@ -22,20 +22,17 @@ enum class Axiom(
                 ?: throw IllegalArgumentException("Passed expression is not an axiom")
             val a = map.getValue("a")
             val b = map.getValue("b")
-            return NaturalProof(
+            return NaturalProof.InsertImp(
                 hypothesis,
                 expression,
-                Rule.I_IMP,
                 level,
-                NaturalProof(
+                NaturalProof.InsertImp(
                     hypothesis + a,
                     Expression.Imp(b, a),
-                    Rule.I_IMP,
                     level + 1,
-                    NaturalProof(
+                    NaturalProof.Ax(
                         hypothesis + a + b,
                         a,
-                        Rule.AX,
                         level + 2,
                     ),
                 ),
@@ -62,7 +59,7 @@ enum class Axiom(
                 Expression.Imp(a, b) +
                 Expression.Imp(a, Expression.Imp(b, c)) +
                 a
-            return NaturalProof(
+            return NaturalProof.InsertImp(
                 hypothesis,
                 Expression.Imp(
                     Expression.Imp(a, b),
@@ -74,9 +71,8 @@ enum class Axiom(
                         Expression.Imp(a, c),
                     ),
                 ),
-                Rule.I_IMP,
                 level,
-                NaturalProof(
+                NaturalProof.InsertImp(
                     h.dropLast(2),
                     Expression.Imp(
                         Expression.Imp(
@@ -85,51 +81,42 @@ enum class Axiom(
                         ),
                         Expression.Imp(a, c),
                     ),
-                    Rule.I_IMP,
                     level + 1,
-                    NaturalProof(
+                    NaturalProof.InsertImp(
                         h.dropLast(1),
                         Expression.Imp(a, c),
-                        Rule.I_IMP,
                         level + 2,
-                        NaturalProof(
+                        NaturalProof.EraseImp(
                             h,
                             c,
-                            Rule.E_IMP,
                             level + 3,
-                            NaturalProof(
+                            NaturalProof.EraseImp(
                                 h,
                                 Expression.Imp(b, c),
-                                Rule.E_IMP,
                                 level + 4,
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h,
                                     Expression.Imp(a, Expression.Imp(b, c)),
-                                    Rule.AX,
                                     level + 5,
                                 ),
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h,
                                     a,
-                                    Rule.AX,
                                     level + 5,
                                 ),
                             ),
-                            NaturalProof(
+                            NaturalProof.EraseImp(
                                 h,
                                 b,
-                                Rule.E_IMP,
                                 level + 4,
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h,
                                     Expression.Imp(a, b),
-                                    Rule.AX,
                                     level + 5,
                                 ),
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h,
                                     a,
-                                    Rule.AX,
                                     level + 5,
                                 ),
                             ),
@@ -155,7 +142,7 @@ enum class Axiom(
             val a = map.getValue("a")
             val b = map.getValue("b")
             val h = hypothesis + a + b
-            return NaturalProof(
+            return NaturalProof.InsertImp(
                 hypothesis,
                 Expression.Imp(
                     a,
@@ -164,31 +151,26 @@ enum class Axiom(
                         Expression.And(a, b),
                     )
                 ),
-                Rule.I_IMP,
                 level,
-                NaturalProof(
+                NaturalProof.InsertImp(
                     hypothesis + a,
                     Expression.Imp(
                         b,
                         Expression.And(a, b),
                     ),
-                    Rule.I_IMP,
                     level + 1,
-                    NaturalProof(
+                    NaturalProof.InsertAnd(
                         h,
                         Expression.And(a, b),
-                        Rule.I_AND,
                         level + 2,
-                        NaturalProof(
+                        NaturalProof.Ax(
                             h,
                             a,
-                            Rule.AX,
                             level + 3,
                         ),
-                        NaturalProof(
+                        NaturalProof.Ax(
                             h,
                             b,
-                            Rule.AX,
                             level + 3,
                         ),
                     )
@@ -212,23 +194,20 @@ enum class Axiom(
             val a = map.getValue("a")
             val b = map.getValue("b")
             val h = hypothesis + Expression.And(a, b)
-            return NaturalProof(
+            return NaturalProof.InsertImp(
                 hypothesis,
                 Expression.Imp(
                     Expression.And(a, b),
                     a,
                 ),
-                Rule.I_IMP,
                 level,
-                NaturalProof(
+                NaturalProof.EraseLeftAnd(
                     h,
                     a,
-                    Rule.E_L_AND,
                     level + 1,
-                    NaturalProof(
+                    NaturalProof.Ax(
                         h,
                         Expression.And(a, b),
-                        Rule.AX,
                         level + 2,
                     )
                 )
@@ -251,23 +230,20 @@ enum class Axiom(
             val a = map.getValue("a")
             val b = map.getValue("b")
             val h = hypothesis + Expression.And(a, b)
-            return NaturalProof(
+            return NaturalProof.InsertImp(
                 hypothesis,
                 Expression.Imp(
                     Expression.And(a, b),
                     b,
                 ),
-                Rule.I_IMP,
                 level,
-                NaturalProof(
+                NaturalProof.EraseRightAnd(
                     h,
                     b,
-                    Rule.E_R_AND,
                     level + 1,
-                    NaturalProof(
+                    NaturalProof.Ax(
                         h,
                         Expression.And(a, b),
-                        Rule.AX,
                         level + 2,
                     )
                 )
@@ -290,23 +266,20 @@ enum class Axiom(
             val a = map.getValue("a")
             val b = map.getValue("b")
             val h = hypothesis + a
-            return NaturalProof(
+            return NaturalProof.InsertImp(
                 hypothesis,
                 Expression.Imp(
                     a,
                     Expression.Or(a, b),
                 ),
-                Rule.I_IMP,
                 level,
-                NaturalProof(
+                NaturalProof.InsertLeftOr(
                     h,
                     Expression.Or(a, b),
-                    Rule.I_L_OR,
                     level + 1,
-                    NaturalProof(
+                    NaturalProof.Ax(
                         h,
                         a,
-                        Rule.AX,
                         level + 2,
                     )
                 )
@@ -329,23 +302,20 @@ enum class Axiom(
             val a = map.getValue("a")
             val b = map.getValue("b")
             val h = hypothesis + b
-            return NaturalProof(
+            return NaturalProof.InsertImp(
                 hypothesis,
                 Expression.Imp(
                     b,
                     Expression.Or(a, b),
                 ),
-                Rule.I_IMP,
                 level,
-                NaturalProof(
+                NaturalProof.InsertRightOr(
                     h,
                     Expression.Or(a, b),
-                    Rule.I_R_OR,
                     level + 1,
-                    NaturalProof(
+                    NaturalProof.Ax(
                         h,
                         b,
-                        Rule.AX,
                         level + 2,
                     )
                 )
@@ -373,7 +343,7 @@ enum class Axiom(
                 Expression.Imp(b, c) +
                 Expression.Or(a, b)
 
-            return NaturalProof(
+            return NaturalProof.InsertImp(
                 hypothesis,
                 Expression.Imp(
                     Expression.Imp(a, c),
@@ -385,9 +355,8 @@ enum class Axiom(
                         ),
                     ),
                 ),
-                Rule.I_IMP,
                 level,
-                NaturalProof(
+                NaturalProof.InsertImp(
                     h.dropLast(2),
                     Expression.Imp(
                         Expression.Imp(b, c),
@@ -396,61 +365,51 @@ enum class Axiom(
                             c,
                         ),
                     ),
-                    Rule.I_IMP,
                     level + 1,
-                    NaturalProof(
+                    NaturalProof.InsertImp(
                         h.dropLast(1),
                         Expression.Imp(
                             Expression.Or(a, b),
                             c,
                         ),
-                        Rule.I_IMP,
                         level + 2,
-                        NaturalProof(
+                        NaturalProof.EraseOr(
                             h,
                             c,
-                            Rule.E_OR,
                             level + 3,
-                            NaturalProof(
+                            NaturalProof.EraseImp(
                                 h + a,
                                 c,
-                                Rule.E_IMP,
                                 level + 4,
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h + a,
                                     Expression.Imp(a, c),
-                                    Rule.AX,
                                     level + 5,
                                 ),
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h + a,
                                     a,
-                                    Rule.AX,
                                     level + 5,
                                 ),
                             ),
-                            NaturalProof(
+                            NaturalProof.EraseImp(
                                 h + b,
                                 c,
-                                Rule.E_IMP,
                                 level + 4,
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h + b,
                                     Expression.Imp(b, c),
-                                    Rule.AX,
                                     level + 5,
                                 ),
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h + b,
                                     b,
-                                    Rule.AX,
                                     level + 5,
                                 ),
                             ),
-                            NaturalProof(
+                            NaturalProof.Ax(
                                 h,
                                 Expression.Or(a, b),
-                                Rule.AX,
                                 level + 4,
                             ),
                         )
@@ -479,7 +438,7 @@ enum class Axiom(
                 Expression.Imp(a, Expression.Imp(b, Expression.Bottom)) +
                 a
 
-            return NaturalProof(
+            return NaturalProof.InsertImp(
                 hypothesis,
                 Expression.Imp(
                     Expression.Imp(a, b),
@@ -491,9 +450,8 @@ enum class Axiom(
                         Expression.Imp(a, Expression.Bottom),
                     ),
                 ),
-                Rule.I_IMP,
                 level,
-                NaturalProof(
+                NaturalProof.InsertImp(
                     h.dropLast(2),
                     Expression.Imp(
                         Expression.Imp(
@@ -502,51 +460,42 @@ enum class Axiom(
                         ),
                         Expression.Imp(a, Expression.Bottom),
                     ),
-                    Rule.I_IMP,
                     level + 1,
-                    NaturalProof(
+                    NaturalProof.InsertImp(
                         h.dropLast(1),
                         Expression.Imp(a, Expression.Bottom),
-                        Rule.I_IMP,
                         level + 2,
-                        NaturalProof(
+                        NaturalProof.EraseImp(
                             h,
                             Expression.Bottom,
-                            Rule.E_IMP,
                             level + 3,
-                            NaturalProof(
+                            NaturalProof.EraseImp(
                                 h,
                                 Expression.Imp(b, Expression.Bottom),
-                                Rule.E_IMP,
                                 level + 4,
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h,
                                     Expression.Imp(a, Expression.Imp(b, Expression.Bottom)),
-                                    Rule.AX,
                                     level + 5,
                                 ),
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h,
                                     a,
-                                    Rule.AX,
                                     level + 5,
                                 ),
                             ),
-                            NaturalProof(
+                            NaturalProof.EraseImp(
                                 h,
                                 b,
-                                Rule.E_IMP,
                                 level + 4,
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h,
                                     Expression.Imp(a, b),
-                                    Rule.AX,
                                     level + 5,
                                 ),
-                                NaturalProof(
+                                NaturalProof.Ax(
                                     h,
                                     a,
-                                    Rule.AX,
                                     level + 5,
                                 ),
                             ),
@@ -571,9 +520,9 @@ enum class Axiom(
                 ?: throw IllegalArgumentException("Passed expression is not an axiom")
             val a = map.getValue("a")
             val b = map.getValue("b")
-            val h = hypothesis + Expression.Imp(a, Expression.Bottom) + a
+            val h = hypothesis + a + Expression.Imp(a, Expression.Bottom)
 
-            return NaturalProof(
+            return NaturalProof.InsertImp(
                 hypothesis,
                 Expression.Imp(
                     a,
@@ -582,36 +531,30 @@ enum class Axiom(
                         b,
                     ),
                 ),
-                Rule.I_IMP,
                 level,
-                NaturalProof(
+                NaturalProof.InsertImp(
                     h.dropLast(1),
                     Expression.Imp(
                         Expression.Imp(a, Expression.Bottom),
                         b,
                     ),
-                    Rule.I_IMP,
                     level + 1,
-                    NaturalProof(
+                    NaturalProof.EraseBottom(
                         h,
                         b,
-                        Rule.E_BOTTOM,
                         level + 2,
-                        NaturalProof(
+                        NaturalProof.EraseImp(
                             h,
                             Expression.Bottom,
-                            Rule.E_IMP,
                             level + 3,
-                            NaturalProof(
+                            NaturalProof.Ax(
                                 h,
                                 Expression.Imp(a, Expression.Bottom),
-                                Rule.AX,
                                 level + 4,
                             ),
-                            NaturalProof(
+                            NaturalProof.Ax(
                                 h,
                                 a,
-                                Rule.AX,
                                 level + 4,
                             ),
                         )

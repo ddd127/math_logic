@@ -9,7 +9,7 @@ class Solve(
     fun solve() {
         Expression.parseClassical(io.readLn())
             .run {
-                io.writeln(this.mathString)
+                io.writeln(this.mathString())
             }
     }
 }
