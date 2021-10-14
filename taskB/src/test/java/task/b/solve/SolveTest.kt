@@ -65,6 +65,12 @@ class SolveTest {
         "test9_out.txt",
     )
 
+    @Test
+    fun test10() = test(
+        "test10_in.txt",
+        "test10_out.txt",
+    )
+
     private fun test(
         inputFile: String,
         expectedFile: String,

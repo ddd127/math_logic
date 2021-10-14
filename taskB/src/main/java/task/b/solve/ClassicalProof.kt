@@ -27,12 +27,14 @@ sealed interface ClassicalProof {
         fun buildProof(
             hypothesis: Set<Expression>,
             statement: Expression,
-            proofProto: List<Expression>,
+            proofList: List<Expression>,
         ): ClassicalProof {
-            val proofList = validateInitial(statement, proofProto)
             val expressionToProof = mutableMapOf<Expression, ClassicalProof>()
             val rightToImp = mutableMapOf<Expression, MutableSet<Expression.Imp>>()
             for ((index, expression) in proofList.withIndex()) {
+                if (expressionToProof.containsKey(expression)) {
+                    continue
+                }
                 val axiom = expression.isAxiom()
                 expressionToProof[expression] = when {
                     hypothesis.contains(expression) -> {
@@ -57,22 +59,12 @@ sealed interface ClassicalProof {
                         ?: run { rightToImp[expression.right] = mutableSetOf(expression) }
                 }
             }
-            return expressionToProof.getValue(statement)
-        }
-
-        private fun validateInitial(
-            statement: Expression,
-            proof: List<Expression>,
-        ): List<Expression> {
-            if (proof.isEmpty()) {
-                throw IllegalArgumentException("Empty proof")
-            }
-            if (proof.last() != statement) {
+            if (proofList.last() != statement) {
                 throw IllegalArgumentException(
                     "The proof does not prove the required expression"
                 )
             }
-            return proof.distinct().dropLastWhile { it != statement }
+            return expressionToProof.getValue(statement)
         }
     }
 }
