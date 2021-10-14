@@ -15,10 +15,11 @@ object RuleChecker {
         val phi = expression.left
         val psi = expression.right.expression
         val variable = expression.right.variable
-        return if (containsFree(phi, variable)) {
+        return if (phi.entersFree(variable)) {
             CheckResult.FreeCheckFailed("variable ${variable.name} occurs free in @-rule")
         } else {
-            proved[Imp(phi, psi)]?.let { Reason.ForAnyRule(it + 1) } ?: CheckResult.SchemeCheckFailed
+            proved[Imp(phi, psi)]?.let { Reason.ForAnyRule(it + 1) }
+                ?: CheckResult.SchemeCheckFailed
         }
     }
 
@@ -32,16 +33,11 @@ object RuleChecker {
         val phi = expression.right
         val psi = expression.left.expression
         val variable = expression.left.variable
-        return if (containsFree(phi, variable)) {
+        return if (phi.entersFree(variable)) {
             CheckResult.FreeCheckFailed("variable ${variable.name} occurs free in ?-rule")
         } else {
-            proved[Imp(psi, phi)]?.let { Reason.ExistsRule(it + 1) } ?: CheckResult.SchemeCheckFailed
+            proved[Imp(psi, phi)]?.let { Reason.ExistsRule(it + 1) }
+                ?: CheckResult.SchemeCheckFailed
         }
     }
-
-    private fun containsFree(
-        expression: Expression,
-        variable: Var,
-    ): Boolean = expression.extractVariables().contains(variable) &&
-        expression.isFree(variable)
 }

@@ -11,7 +11,7 @@ KOTLINC=kotlinc
 all: out compile
 
 run:
-	(export JAVA_OPTS='-Xmx1g' && ${KOTLIN} -cp out:${DEPS} -Djava.io.tmpdir=tmp task.b.solve.${MAINCLASS} $(IN) $(OUT))
+	(export JAVA_OPTS='-Xmx1g -Xms32M' && ${KOTLIN} -cp out:${DEPS} -Djava.io.tmpdir=tmp task.b.solve.${MAINCLASS} $(IN) $(OUT))
 
 pack:
 	zip taskB.zip -r Makefile lib commons taskA taskB taskC

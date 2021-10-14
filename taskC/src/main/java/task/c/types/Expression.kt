@@ -6,11 +6,10 @@ sealed interface Expression {
 
     val infixString: String
 
-    fun isFree(variable: Var): Boolean
-    fun replaceFree(oldVar: Var, replacement: Term): Expression
-    fun extractTerms(target: Expression, variable: Var): Set<Term>?
-    fun extractVariables(): Set<Var>
-    fun isFreeForReplace(target: Var, replacement: Term): Boolean
+    fun entersFree(variable: Var): Boolean
+    fun extractFreeQuantifiers(variable: Var, under: Set<Var> = emptySet()): Set<Var>
+    fun replaceFree(variable: Var, term: Term): Expression
+    fun extractFreeReplacements(replaced: Expression, variable: Var): Set<Term>?
 
     companion object {
         fun parseExpression(string: String): Expression =
@@ -23,16 +22,13 @@ sealed interface BinaryExpression : Expression {
     val left: Expression
     val right: Expression
 
-    override fun isFree(variable: Var): Boolean {
-        return left.isFree(variable) && right.isFree(variable)
+    override fun entersFree(variable: Var): Boolean {
+        return left.entersFree(variable) || right.entersFree(variable)
     }
 
-    override fun extractVariables(): Set<Var> {
-        return left.extractVariables() + right.extractVariables()
-    }
-
-    override fun isFreeForReplace(target: Var, replacement: Term): Boolean {
-        return left.isFreeForReplace(target, replacement) && right.isFreeForReplace(target, replacement)
+    override fun extractFreeQuantifiers(variable: Var, under: Set<Var>): Set<Var> {
+        return left.extractFreeQuantifiers(variable, under) +
+            right.extractFreeQuantifiers(variable, under)
     }
 }
 
@@ -40,19 +36,22 @@ sealed interface QuantifierExpression : Expression {
     val variable: Var
     val expression: Expression
 
-    override fun isFree(variable: Var): Boolean {
-        return (variable != this.variable) && expression.isFree(variable)
-    }
-
-    override fun extractVariables(): Set<Var> {
-        return expression.extractVariables() + variable
-    }
-
-    override fun isFreeForReplace(target: Var, replacement: Term): Boolean {
-        return if (variable == target || !expression.isFreeForReplace(target, replacement)) {
+    override fun entersFree(variable: Var): Boolean {
+        return if (this.variable == variable) {
             false
         } else {
-            !replacement.extractVariables().contains(variable)
+            expression.entersFree(variable)
+        }
+    }
+
+    override fun extractFreeQuantifiers(variable: Var, under: Set<Var>): Set<Var> {
+        return if (this.variable == variable) {
+            emptySet()
+        } else {
+            expression.extractFreeQuantifiers(
+                variable,
+                under + this.variable,
+            )
         }
     }
 }
@@ -62,17 +61,19 @@ data class Predicate(
 ) : Expression {
     override val infixString: String = name
 
-    override fun isFree(variable: Var) = true
+    override fun entersFree(variable: Var): Boolean = false
 
-    override fun replaceFree(oldVar: Var, replacement: Term): Predicate {
-        return this
+    override fun extractFreeQuantifiers(variable: Var, under: Set<Var>): Set<Var> = emptySet()
+
+    override fun replaceFree(variable: Var, term: Term): Predicate = this
+
+    override fun extractFreeReplacements(replaced: Expression, variable: Var): Set<Term>? {
+        return if (this == replaced) {
+            emptySet()
+        } else {
+            null
+        }
     }
-
-    override fun extractTerms(target: Expression, variable: Var): Set<Term> = emptySet()
-
-    override fun extractVariables(): Set<Var> = emptySet()
-
-    override fun isFreeForReplace(target: Var, replacement: Term): Boolean = true
 }
 
 data class Eq(
@@ -81,30 +82,30 @@ data class Eq(
 ) : Expression {
     override val infixString: String get() = "(${left.infixString}=${right.infixString})"
 
-    override fun isFree(variable: Var): Boolean = true
+    override fun entersFree(variable: Var): Boolean {
+        return left.entersFree(variable) || right.entersFree(variable)
+    }
 
-    override fun replaceFree(oldVar: Var, replacement: Term): Eq {
+    override fun extractFreeQuantifiers(variable: Var, under: Set<Var>): Set<Var> {
+        return left.extractFreeQuantifiers(variable, under) +
+            right.extractFreeQuantifiers(variable, under)
+    }
+
+    override fun replaceFree(variable: Var, term: Term): Eq {
         return Eq(
-            left.replaceFree(oldVar, replacement),
-            right.replaceFree(oldVar, replacement),
+            left.replaceFree(variable, term),
+            right.replaceFree(variable, term),
         )
     }
 
-    override fun extractTerms(target: Expression, variable: Var): Set<Term>? {
-        return if (target !is Eq) {
-            null
+    override fun extractFreeReplacements(replaced: Expression, variable: Var): Set<Term>? {
+        return if (replaced is Eq) {
+            (left.extractFreeReplacements(replaced.left, variable) ?: return null) +
+                (right.extractFreeReplacements(replaced.right, variable) ?: return null)
         } else {
-            val leftSet = left.extractTerms(target.left, variable) ?: return null
-            val rightSet = right.extractTerms(target.right, variable) ?: return null
-            leftSet + rightSet
+            null
         }
     }
-
-    override fun extractVariables(): Set<Var> {
-        return left.extractVariables() + right.extractVariables()
-    }
-
-    override fun isFreeForReplace(target: Var, replacement: Term): Boolean = true
 }
 
 data class Not(
@@ -112,28 +113,24 @@ data class Not(
 ) : Expression {
     override val infixString: String get() = "(!${arg.infixString})"
 
-    override fun isFree(variable: Var): Boolean {
-        return arg.isFree(variable)
+    override fun entersFree(variable: Var): Boolean {
+        return arg.entersFree(variable)
     }
 
-    override fun replaceFree(oldVar: Var, replacement: Term): Not {
-        return Not(arg.replaceFree(oldVar, replacement))
+    override fun extractFreeQuantifiers(variable: Var, under: Set<Var>): Set<Var> {
+        return arg.extractFreeQuantifiers(variable, under)
     }
 
-    override fun extractTerms(target: Expression, variable: Var): Set<Term>? {
-        return if (target !is Not) {
-            null
+    override fun replaceFree(variable: Var, term: Term): Not {
+        return Not(arg.replaceFree(variable, term))
+    }
+
+    override fun extractFreeReplacements(replaced: Expression, variable: Var): Set<Term>? {
+        return if (replaced is Not) {
+            arg.extractFreeReplacements(replaced.arg, variable)
         } else {
-            arg.extractTerms(target.arg, variable)
+            null
         }
-    }
-
-    override fun extractVariables(): Set<Var> {
-        return arg.extractVariables()
-    }
-
-    override fun isFreeForReplace(target: Var, replacement: Term): Boolean {
-        return arg.isFreeForReplace(target, replacement)
     }
 }
 
@@ -143,20 +140,19 @@ data class Imp(
 ) : BinaryExpression {
     override val infixString: String get() = "(${left.infixString}->${right.infixString})"
 
-    override fun replaceFree(oldVar: Var, replacement: Term): Imp {
+    override fun replaceFree(variable: Var, term: Term): Imp {
         return Imp(
-            left.replaceFree(oldVar, replacement),
-            right.replaceFree(oldVar, replacement),
+            left.replaceFree(variable, term),
+            right.replaceFree(variable, term),
         )
     }
 
-    override fun extractTerms(target: Expression, variable: Var): Set<Term>? {
-        return if (target !is Imp) {
-            null
+    override fun extractFreeReplacements(replaced: Expression, variable: Var): Set<Term>? {
+        return if (replaced is Imp) {
+            (left.extractFreeReplacements(replaced.left, variable) ?: return null) +
+                (right.extractFreeReplacements(replaced.right, variable) ?: return null)
         } else {
-            val leftSet = left.extractTerms(target.left, variable) ?: return null
-            val rightSet = right.extractTerms(target.right, variable) ?: return null
-            leftSet + rightSet
+            null
         }
     }
 }
@@ -167,20 +163,19 @@ data class And(
 ) : BinaryExpression {
     override val infixString: String get() = "(${left.infixString}&${right.infixString})"
 
-    override fun replaceFree(oldVar: Var, replacement: Term): And {
+    override fun replaceFree(variable: Var, term: Term): And {
         return And(
-            left.replaceFree(oldVar, replacement),
-            right.replaceFree(oldVar, replacement),
+            left.replaceFree(variable, term),
+            right.replaceFree(variable, term),
         )
     }
 
-    override fun extractTerms(target: Expression, variable: Var): Set<Term>? {
-        return if (target !is And) {
-            null
+    override fun extractFreeReplacements(replaced: Expression, variable: Var): Set<Term>? {
+        return if (replaced is And) {
+            (left.extractFreeReplacements(replaced.left, variable) ?: return null) +
+                (right.extractFreeReplacements(replaced.right, variable) ?: return null)
         } else {
-            val leftSet = left.extractTerms(target.left, variable) ?: return null
-            val rightSet = right.extractTerms(target.right, variable) ?: return null
-            leftSet + rightSet
+            null
         }
     }
 }
@@ -191,20 +186,19 @@ data class Or(
 ) : BinaryExpression {
     override val infixString: String get() = "(${left.infixString}|${right.infixString})"
 
-    override fun replaceFree(oldVar: Var, replacement: Term): Or {
+    override fun replaceFree(variable: Var, term: Term): Or {
         return Or(
-            left.replaceFree(oldVar, replacement),
-            right.replaceFree(oldVar, replacement),
+            left.replaceFree(variable, term),
+            right.replaceFree(variable, term),
         )
     }
 
-    override fun extractTerms(target: Expression, variable: Var): Set<Term>? {
-        return if (target !is Or) {
-            null
+    override fun extractFreeReplacements(replaced: Expression, variable: Var): Set<Term>? {
+        return if (replaced is Or) {
+            (left.extractFreeReplacements(replaced.left, variable) ?: return null) +
+                (right.extractFreeReplacements(replaced.right, variable) ?: return null)
         } else {
-            val leftSet = left.extractTerms(target.left, variable) ?: return null
-            val rightSet = right.extractTerms(target.right, variable) ?: return null
-            leftSet + rightSet
+            null
         }
     }
 }
@@ -215,23 +209,29 @@ data class ForAny(
 ) : QuantifierExpression {
     override val infixString: String get() = "(@${variable.infixString}.${expression.infixString})"
 
-    override fun replaceFree(oldVar: Var, replacement: Term): ForAny {
-        if (variable == oldVar) {
-            throw IllegalStateException("Can not replace not free variable")
+    override fun replaceFree(variable: Var, term: Term): ForAny {
+        return if (this.variable == variable) {
+            this
+        } else {
+            ForAny(
+                this.variable,
+                expression.replaceFree(variable, term),
+            )
         }
-        return ForAny(
-            variable,
-            expression.replaceFree(oldVar, replacement),
-        )
     }
 
-    override fun extractTerms(target: Expression, variable: Var): Set<Term>? {
-        return if (target !is ForAny) {
-            null
+    override fun extractFreeReplacements(replaced: Expression, variable: Var): Set<Term>? {
+        if (replaced !is ForAny) {
+            return null
+        }
+        if (this.variable != variable) {
+            return (this.variable.extractFreeReplacements(replaced.variable, variable) ?: return null) +
+                (expression.extractFreeReplacements(replaced.expression, variable) ?: return null)
+        }
+        return if (this == replaced) {
+            emptySet()
         } else {
-            val leftSet = this.variable.extractTerms(target.variable, variable)
-            val rightSet = expression.extractTerms(target.expression, variable) ?: return null
-            leftSet + rightSet
+            null
         }
     }
 }
@@ -242,23 +242,29 @@ data class Exists(
 ) : QuantifierExpression {
     override val infixString: String get() = "(?${variable.infixString}.${expression.infixString})"
 
-    override fun replaceFree(oldVar: Var, replacement: Term): Exists {
-        if (variable == oldVar) {
-            throw IllegalStateException("Can not replace not free variable")
+    override fun replaceFree(variable: Var, term: Term): Exists {
+        return if (this.variable == variable) {
+            this
+        } else {
+            Exists(
+                this.variable,
+                expression.replaceFree(variable, term),
+            )
         }
-        return Exists(
-            variable,
-            expression.replaceFree(oldVar, replacement),
-        )
     }
 
-    override fun extractTerms(target: Expression, variable: Var): Set<Term>? {
-        return if (target !is Exists) {
-            null
+    override fun extractFreeReplacements(replaced: Expression, variable: Var): Set<Term>? {
+        if (replaced !is Exists) {
+            return null
+        }
+        if (this.variable != variable) {
+            return (this.variable.extractFreeReplacements(replaced.variable, variable) ?: return null) +
+                (expression.extractFreeReplacements(replaced.expression, variable) ?: return null)
+        }
+        return if (this == replaced) {
+            emptySet()
         } else {
-            val leftSet = this.variable.extractTerms(target.variable, variable)
-            val rightSet = expression.extractTerms(target.expression, variable) ?: return null
-            leftSet + rightSet
+            null
         }
     }
 }

@@ -15,7 +15,7 @@ object InductionChecker {
         }
         val variable = expression.left.right.variable
         val phi = expression.right
-        if (!phi.isFree(variable)) {
+        if (!phi.entersFree(variable)) {
             return CheckResult.SchemeCheckFailed
         }
         val phiZeroReplaced = phi.replaceFree(variable, Zero)

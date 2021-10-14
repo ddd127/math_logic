@@ -32,20 +32,20 @@ object QuantifierAxiomChecker {
         axNumber: Int,
         axSymbol: Char,
     ): CheckResult {
-        val extractedTerms = phi.extractTerms(replacedPhi, variable) ?: return CheckResult.SchemeCheckFailed
-        val theta = extractedTerms.let {
-            if (it.size != 1) {
-                return CheckResult.SchemeCheckFailed
-            } else {
-                it.first()
-            }
+        val replacements = phi.extractFreeReplacements(replacedPhi, variable)
+            ?: return CheckResult.SchemeCheckFailed
+        val theta = when {
+            replacements.isEmpty() -> return Reason.LogicAxiom(axNumber)
+            replacements.size == 1 -> replacements.first()
+            else -> return CheckResult.SchemeCheckFailed
         }
-        return if (phi.isFreeForReplace(variable, theta)) {
-            Reason.LogicAxiom(axNumber)
-        } else {
+        val quantifiers = phi.extractFreeQuantifiers(variable)
+        return if (theta.extractVariables().any { it in quantifiers }) {
             CheckResult.FreeCheckFailed(
                 "variable ${variable.name} is not free for term ${theta.infixString} in $axSymbol-axiom"
             )
+        } else {
+            Reason.LogicAxiom(axNumber)
         }
     }
 }

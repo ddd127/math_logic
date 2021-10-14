@@ -4,14 +4,25 @@ sealed interface Term {
 
     val infixString: String
 
-    fun replaceFree(oldVar: Var, replacement: Term): Term
-    fun extractTerms(target: Term, variable: Var): Set<Term>?
+    fun entersFree(variable: Var): Boolean
+    fun extractFreeQuantifiers(variable: Var, under: Set<Var>): Set<Var>
+    fun replaceFree(variable: Var, term: Term): Term
+    fun extractFreeReplacements(replaced: Term, variable: Var): Set<Term>?
     fun extractVariables(): Set<Var>
 }
 
 sealed interface BinaryTerm : Term {
     val left: Term
     val right: Term
+
+    override fun entersFree(variable: Var): Boolean {
+        return left.entersFree(variable) || right.entersFree(variable)
+    }
+
+    override fun extractFreeQuantifiers(variable: Var, under: Set<Var>): Set<Var> {
+        return left.extractFreeQuantifiers(variable, under) +
+            right.extractFreeQuantifiers(variable, under)
+    }
 
     override fun extractVariables(): Set<Var> {
         return left.extractVariables() + right.extractVariables()
@@ -21,9 +32,19 @@ sealed interface BinaryTerm : Term {
 object Zero : Term {
     override val infixString: String = "0"
 
-    override fun replaceFree(oldVar: Var, replacement: Term): Zero = Zero
+    override fun entersFree(variable: Var): Boolean = false
 
-    override fun extractTerms(target: Term, variable: Var): Set<Term> = emptySet()
+    override fun extractFreeQuantifiers(variable: Var, under: Set<Var>): Set<Var> = emptySet()
+
+    override fun replaceFree(variable: Var, term: Term): Zero = Zero
+
+    override fun extractFreeReplacements(replaced: Term, variable: Var): Set<Term>? {
+        return if (replaced is Zero) {
+            emptySet()
+        } else {
+            null
+        }
+    }
 
     override fun extractVariables(): Set<Var> = emptySet()
 }
@@ -33,19 +54,34 @@ data class Var(
 ) : Term {
     override val infixString: String = name
 
-    override fun replaceFree(oldVar: Var, replacement: Term): Term {
-        return if (name == oldVar.name) {
-            replacement
+    override fun entersFree(variable: Var): Boolean {
+        return this == variable
+    }
+
+    override fun extractFreeQuantifiers(variable: Var, under: Set<Var>): Set<Var> {
+        return if (this == variable) {
+            under
+        } else {
+            emptySet()
+        }
+    }
+
+    override fun replaceFree(variable: Var, term: Term): Term {
+        return if (this == variable) {
+            term
         } else {
             this
         }
     }
 
-    override fun extractTerms(target: Term, variable: Var): Set<Term> {
-        return if (variable.name == name) {
-            setOf(target)
-        } else {
+    override fun extractFreeReplacements(replaced: Term, variable: Var): Set<Term>? {
+        if (this == variable) {
+            return setOf(replaced)
+        }
+        return if (replaced == this) {
             emptySet()
+        } else {
+            null
         }
     }
 
@@ -57,15 +93,23 @@ data class Inc(
 ) : Term {
     override val infixString: String get() = "${arg.infixString}'"
 
-    override fun replaceFree(oldVar: Var, replacement: Term): Inc {
-        return Inc(arg.replaceFree(oldVar, replacement))
+    override fun entersFree(variable: Var): Boolean {
+        return arg.entersFree(variable)
     }
 
-    override fun extractTerms(target: Term, variable: Var): Set<Term>? {
-        return if (target !is Inc) {
-            null
+    override fun extractFreeQuantifiers(variable: Var, under: Set<Var>): Set<Var> {
+        return arg.extractFreeQuantifiers(variable, under)
+    }
+
+    override fun replaceFree(variable: Var, term: Term): Inc {
+        return Inc(arg.replaceFree(variable, term))
+    }
+
+    override fun extractFreeReplacements(replaced: Term, variable: Var): Set<Term>? {
+        return if (replaced is Inc) {
+            arg.extractFreeReplacements(replaced.arg, variable)
         } else {
-            arg.extractTerms(target.arg, variable)
+            null
         }
     }
 
@@ -78,20 +122,19 @@ data class Add(
 ) : BinaryTerm {
     override val infixString: String get() = "(${left.infixString}+${right.infixString})"
 
-    override fun replaceFree(oldVar: Var, replacement: Term): Add {
+    override fun replaceFree(variable: Var, term: Term): Add {
         return Add(
-            left.replaceFree(oldVar, replacement),
-            right.replaceFree(oldVar, replacement),
+            left.replaceFree(variable, term),
+            right.replaceFree(variable, term),
         )
     }
 
-    override fun extractTerms(target: Term, variable: Var): Set<Term>? {
-        return if (target !is Add) {
-            null
+    override fun extractFreeReplacements(replaced: Term, variable: Var): Set<Term>? {
+        return if (replaced is Add) {
+            (left.extractFreeReplacements(replaced.left, variable) ?: return null) +
+                (right.extractFreeReplacements(replaced.right, variable) ?: return null)
         } else {
-            val leftSet = left.extractTerms(target.left, variable) ?: return null
-            val rightSet = right.extractTerms(target.right, variable) ?: return null
-            leftSet + rightSet
+            null
         }
     }
 }
@@ -102,20 +145,19 @@ data class Mul(
 ) : BinaryTerm {
     override val infixString: String get() = "(${left.infixString}*${right.infixString})"
 
-    override fun replaceFree(oldVar: Var, replacement: Term): Mul {
+    override fun replaceFree(variable: Var, term: Term): Mul {
         return Mul(
-            left.replaceFree(oldVar, replacement),
-            right.replaceFree(oldVar, replacement),
+            left.replaceFree(variable, term),
+            right.replaceFree(variable, term),
         )
     }
 
-    override fun extractTerms(target: Term, variable: Var): Set<Term>? {
-        return if (target !is Mul) {
-            null
+    override fun extractFreeReplacements(replaced: Term, variable: Var): Set<Term>? {
+        return if (replaced is Mul) {
+            (left.extractFreeReplacements(replaced.left, variable) ?: return null) +
+                (right.extractFreeReplacements(replaced.right, variable) ?: return null)
         } else {
-            val leftSet = left.extractTerms(target.left, variable) ?: return null
-            val rightSet = right.extractTerms(target.right, variable) ?: return null
-            leftSet + rightSet
+            null
         }
     }
 }
